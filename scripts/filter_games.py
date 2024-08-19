@@ -31,19 +31,22 @@ def filter_no_existed_games(game_ids: list[int], items: list[tuple[int, str, int
     # id, name, id_game
     new_items = list(filter(lambda i: len(i) == 3, items))
 
+    # Los que podemos guardar
     new_id = [elem[0] for elem in new_items if elem[2] in games]
     new_name = [elem[1] for elem in new_items if elem[2] in games]
     new_id_game = [elem[2] for elem in new_items if elem[2] in games]
 
     # Fullgame no guardado
-    not_found = list(set([i[2] for i in new_items]).difference(set(new_id_game)))
+    # not_found = list(set([i[2] for i in new_items]).difference(set(new_id_game)))
+    not_found = [i[2] for i in new_items if i[2] not in set(new_id_game)]
     not_full_base.extend(not_found)
 
     # Contenido sin fullgame guardado
-    not_game = list(set([i[0] for i in new_items]).difference(set(new_id)))
+    # not_game = list(set([i[0] for i in new_items]).difference(set(new_id)))
+    not_game = [i[0] for i in new_items if i[0] not in set(new_id)]
     not_full_game.extend(not_game)
 
-    print(f"No found base game in {len(not_game)} contents. No Base Game: {len(not_full_base)}")
+    print(f"No found base game in {len(not_game)} contents. Complete miss list: {len(not_full_game)}")
     with open(_not_full_game_path, "w") as f:
         json.dump(list(zip(not_full_game, not_full_base)), f, indent=2)
 

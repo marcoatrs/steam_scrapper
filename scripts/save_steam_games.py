@@ -61,6 +61,7 @@ if len(apps) == 0:
 # Game
 
 games = apps.get("game", [])
+print(f"Found {len(games)} games")
 if "game" in apps:
 
     print(f"### NEW game: {len(games)} ###")
@@ -69,8 +70,7 @@ if "game" in apps:
         cursor.executemany(query, apps["game"])
     conn.commit()
     apps.pop("game")
-else:
-    print("No found game")
+
 
 # Drop item without saved game
 with conn.cursor() as cursor:

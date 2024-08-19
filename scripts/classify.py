@@ -24,6 +24,7 @@ def classify_games(add_id: list[int], game_name: list[str]) -> list[int]:
     create_no_valid_list()
     with open(_not_valid_path, "r") as f:
         not_valid_list: list = json.load(f)
+    print(f"Current no valid list: {len(not_valid_list)}")
     create_not_full_game()
     with open(_not_full_game_path, "r") as f:
         not_full: list[tuple[int]] = json.load(f)
@@ -63,7 +64,7 @@ def classify_games(add_id: list[int], game_name: list[str]) -> list[int]:
 
     print(f"Not valid data: {len(not_valid_list)}")
     with open(_not_valid_path, "w") as f:
-        json.dump(not_valid_list, f)
+        json.dump(not_valid_list, f, indent=2)
 
     print("Games saved in data/classify.json!")
     return not_valid_list
