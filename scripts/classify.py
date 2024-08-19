@@ -6,6 +6,7 @@ import requests
 
 _not_valid_path = Path(__file__).parents[1] / "data" / "not_valid_list.json"
 _not_full_game_path = Path(__file__).parents[1] / "data" / "no_fullgame.json"
+_backup_files = Path(__file__).parents[1] / "data" / "backups.json"
 
 def create_no_valid_list():
     if not _not_valid_path.exists():
@@ -16,6 +17,11 @@ def create_not_full_game():
     if not _not_full_game_path.exists():
         with open(_not_full_game_path, "w") as f:
             json.dump([], f)
+
+def create_backup_file():
+    if not _backup_files.exists():
+        with open(_backup_files, "w") as f:
+            json.dump({}, f)
 
 
 def classify_games(add_id: list[int], game_name: list[str]) -> list[int]:
@@ -29,6 +35,10 @@ def classify_games(add_id: list[int], game_name: list[str]) -> list[int]:
     with open(_not_full_game_path, "r") as f:
         not_full: list[tuple[int]] = json.load(f)
     not_full = [i[0] for i in not_full]
+    create_backup_file()
+    with open(_backup_files, "r") as f:
+        backups: dict[str:list] = json.load(f)
+    backups_ids = [item[0] for field in backups for item in field]
 
     url = "https://store.steampowered.com/api/appdetails?appids={}"
     while len(apps) > 0:
@@ -37,11 +47,18 @@ def classify_games(add_id: list[int], game_name: list[str]) -> list[int]:
             continue
         if app[0] in not_full:
             continue
+        if app[0] in backups_ids:
+            continue
         app_request_result = requests.get(url.format(app[0]))
         if app_request_result.status_code != 200:
             print(f"Request status code: {app_request_result.status_code}")
             break
-        data = app_request_result.json()
+        try:
+            data = app_request_result.json()
+        except requests.exceptions.JSONDecodeError as e:
+            print(f"Error Json in id {app[0]}")
+            not_valid_list.append(app[0])
+            continue
         try:
             item_type = data[str(app[0])]["data"]["type"]
         except Exception:

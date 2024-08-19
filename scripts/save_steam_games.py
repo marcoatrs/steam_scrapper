@@ -31,15 +31,15 @@ conn = psycopg2.connect(
 )
 
 # SAVED GAMES
-ids = []
+ids_complete = []
 for table in ["game", "dlc", "music", "demo"]:
     with conn.cursor() as cursor:
         query = f"SELECT id FROM {os.environ['DB_SCHEMA']}.{table}"
         cursor.execute(query)
-        ids.extend([i[0] for i in cursor.fetchall()])
+        ids_complete.extend([i[0] for i in cursor.fetchall()])
 
 # FILTER NEW GAMES
-new_games_ids = get_new_games(ids, ids_list)
+new_games_ids = get_new_games(ids_complete, ids_list)
 new_ids, new_games = filter_games(ids_list, names_list, new_games_ids)
 if len(new_games) == 0:
     print("No new games!")
@@ -65,6 +65,7 @@ print(f"Found {len(games)} games")
 if "game" in apps:
 
     print(f"### NEW game: {len(games)} ###")
+    ids_complete.extend([i[0] for i in apps["game"]])
     query = f"INSERT INTO {os.environ['DB_SCHEMA']}.game(id, name) VALUES(%s, %s)"
     with conn.cursor() as cursor:
         cursor.executemany(query, apps["game"])
@@ -80,16 +81,28 @@ with conn.cursor() as cursor:
 
     for key, values in apps.items():
         print(f"Filter {key}")
-        new_values = filter_no_existed_games(ids, values)
+        new_values = filter_no_existed_games(ids, values, key)
         if (len(new_values) == 0) or (len(new_values[0]) == 0):
             print(f"No new {key}")
             continue
+        ids_complete.extend([i[0] for i in new_values])
         print(f"### NEW {key}: {len(new_values)} ###")
         query = f"INSERT INTO {os.environ['DB_SCHEMA']}.{key}(id, name, id_game) VALUES(%s, %s, %s)"
         with conn.cursor() as cursor:
             cursor.executemany(query, new_values)
         conn.commit()
 
+backups_item = clean_no_basegame_list(ids_complete, ids)
+for key, values in backups_item.items():
+    if len(values) == 0:
+        continue
+    if key == "game":
+        query = f"INSERT INTO {os.environ['DB_SCHEMA']}.game(id, name) VALUES(%s, %s)"
+    else:
+        query = f"INSERT INTO {os.environ['DB_SCHEMA']}.{key}(id, name, id_game) VALUES(%s, %s, %s)"
+    print(f"### NEW {key} Backup: {len(values)} ###")
+    with conn.cursor() as cursor:
+        cursor.executemany(query, values)
+    conn.commit()
 
-clean_no_basegame_list([i[0] for i in games])
 print("Games saved!")
