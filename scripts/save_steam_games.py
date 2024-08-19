@@ -4,6 +4,7 @@ import sys
 
 import psycopg2
 from classify import classify_games
+from clean_no_valid import clean_no_basegame_list
 from dotenv import load_dotenv
 from filter_games import filter_games, filter_no_existed_games, get_new_games
 
@@ -47,7 +48,7 @@ if len(new_games) == 0:
 print(f"{len(new_games)} New games!")
 
 # CLASSIFY
-apps = classify_games(new_ids, new_games)
+not_valid = classify_games(new_ids, new_games)
 
 # SAVE IN DB
 with open("data/classify.json", "r") as json_file:
@@ -58,29 +59,37 @@ if len(apps) == 0:
     sys.exit()
 
 # Game
+
+games = apps.get("game", [])
 if "game" in apps:
-    print("Saving game")
+
+    print(f"### NEW game: {len(games)} ###")
     query = f"INSERT INTO {os.environ['DB_SCHEMA']}.game(id, name) VALUES(%s, %s)"
     with conn.cursor() as cursor:
         cursor.executemany(query, apps["game"])
-    apps.pop("game")
     conn.commit()
+    apps.pop("game")
+else:
+    print("No found game")
 
 # Drop item without saved game
 with conn.cursor() as cursor:
     query = f"SELECT id FROM {os.environ['DB_SCHEMA']}.game"
     cursor.execute(query)
-    ids = cursor.fetchall()
+    ids = [i[0] for i in cursor.fetchall()]
 
     for key, values in apps.items():
-        print(f"Saving {key}")
+        print(f"Filter {key}")
         new_values = filter_no_existed_games(ids, values)
-        if len(new_values[0]):
+        if (len(new_values) == 0) or (len(new_values[0]) == 0):
+            print(f"No new {key}")
             continue
-        print(new_values)
+        print(f"### NEW {key}: {len(new_values)} ###")
         query = f"INSERT INTO {os.environ['DB_SCHEMA']}.{key}(id, name, id_game) VALUES(%s, %s, %s)"
         with conn.cursor() as cursor:
             cursor.executemany(query, new_values)
         conn.commit()
 
+
+clean_no_basegame_list([i[0] for i in games])
 print("Games saved!")
