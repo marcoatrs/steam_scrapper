@@ -1,8 +1,6 @@
 import json
-from pathlib import Path
 
-_not_full_game_path = Path(__file__).parents[1] / "data" / "no_fullgame.json"
-_backup_files = Path(__file__).parents[1] / "data" / "backups.json"
+import config as cfg
 
 
 def get_new_games(saved_games_ids: list[int], new_games_ids: list[int]) -> list[int]:
@@ -24,7 +22,7 @@ def filter_games(
 def filter_no_existed_games(
     game_ids: list[int], items: list[tuple[int, str, int]], type: str
 ) -> list[tuple]:
-    with open(_not_full_game_path, "r") as f:
+    with open(cfg.not_full_path, "r") as f:
         not_full: list[tuple[int, int]] = json.load(f)
     not_full_game = [i[0] for i in not_full]
     not_full_base = [i[1] for i in not_full]
@@ -52,18 +50,18 @@ def filter_no_existed_games(
     backup_items = [item for item in new_items if item[1] not in not_full_game]
     if len(backup_items) > 0:
         print(f"Saving {len(backup_items)} elements to backup")
-        with open(_backup_files, "r") as f:
+        with open(cfg.backup_files, "r") as f:
             backups: dict[str, list] = json.load(f)
         if not type in backups:
             backups[type] = []
         backups[type].extend(backup_items)
-        with open(_backup_files, "w") as f:
+        with open(cfg.backup_files, "w") as f:
             json.dump(backups, f, indent=2)
 
     print(
         f"No found base game in {len(not_game)} contents. Complete miss list: {len(not_full_game)}"
     )
-    with open(_not_full_game_path, "w") as f:
+    with open(cfg.not_full_path, "w") as f:
         json.dump(list(zip(not_full_game, not_full_base)), f, indent=2)
 
     return list(zip(new_id, new_name, new_id_game))
