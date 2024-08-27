@@ -11,11 +11,15 @@ def get_new_games(saved_games_ids: list[int], new_games_ids: list[int]) -> list[
 def filter_games(
     games_ids: list[int], games_names: list[str], ids: list[int]
 ) -> tuple[list[int], list[str]]:
-
+    """
+    Args:
+        games_ids (list[int]): Ids de Elementos del json.
+        games_names (list[str]): Nombres de elementos del json.
+        ids (list[int]): Elementos no guardados en DB.
+    """
     ids_set = set(ids)
     new_ids = [id for id in games_ids if id in ids_set]
     new_games = [name for id, name in zip(games_ids, games_names) if id in ids_set]
-
     return new_ids, new_games
 
 
@@ -37,17 +41,16 @@ def filter_no_existed_games(
     new_name = [elem[1] for elem in new_items if elem[2] in games]
     new_id_game = [elem[2] for elem in new_items if elem[2] in games]
 
-    # Fullgame no guardado
-    # not_found = list(set([i[2] for i in new_items]).difference(set(new_id_game)))
+    # Juego base no guardado
     not_found = [i[2] for i in new_items if i[2] not in set(new_id_game)]
     not_full_base.extend(not_found)
 
-    # Contenido sin fullgame guardado
-    # not_game = list(set([i[0] for i in new_items]).difference(set(new_id)))
+    # Contenido sin juego base guardado
     not_game = [i[0] for i in new_items if i[0] not in set(new_id)]
     not_full_game.extend(not_game)
 
-    backup_items = [item for item in new_items if item[1] not in not_full_game]
+    # Elementos al backup (contenido sin juego base guardado)
+    backup_items = [item for item in new_items if item[1] not in not_full_base]
     if len(backup_items) > 0:
         print(f"Saving {len(backup_items)} elements to backup")
         with open(cfg.backup_files, "r") as f:

@@ -9,7 +9,7 @@ def clean_no_basegame_list(elements_in_db: list[int], games_in_db: list[int]) ->
         not_full_list: list[tuple[int, int]] = json.load(f)
     not_full_list_base = [i[1] for i in not_full_list]
 
-    # items in not_full_list_base no in new_items
+    # Aun no estan en los elementos guardados
     new_not_valid = [i for i in not_full_list_base if i not in set(elements_in_db)]
 
     if len(not_full_list) != len(new_not_valid):

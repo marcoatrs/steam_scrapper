@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 
 import psycopg2
 from classify import classify_games
@@ -33,18 +34,20 @@ def scrap():
 
     # SAVED GAMES
     ids_complete = []
-    for table in ["game", "dlc", "music", "demo", "advertising", "episode", "mod"]:
+    for table in ["game", "dlc", "music", "demo", "advertising", "episode", "mod", "movie", "series"]:
         with conn.cursor() as cursor:
             query = f"SELECT id FROM {os.environ['DB_SCHEMA']}.{table}"
             cursor.execute(query)
             ids_complete.extend([i[0] for i in cursor.fetchall()])
 
     # FILTER NEW GAMES
+    # Elementos no guardados en DB
     new_games_ids = get_new_games(ids_complete, ids_list)
+    # Conjunto de id y nombre de elemtos no guardados en DB
     new_ids, new_games = filter_games(ids_list, names_list, new_games_ids)
     if len(new_games) == 0:
         print("No new games!")
-        return
+        sys.exit(0)
 
     print(f"{len(new_games)} New games!")
 
